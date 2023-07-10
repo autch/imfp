@@ -6,8 +6,9 @@ URL_LOGIN = "https://www.iijmio.jp/auth/login.jsp"
 
 iijmio_user = YAML.load(File.read("config/iijmio.yml"))
 
-agent = Mechanize.new
+now = Time.now
 
+agent = Mechanize.new
 page = agent.get(URL_LOGIN)
 
 login_form = page.forms.first
@@ -15,7 +16,8 @@ login_form.j_username = iijmio_user["username"]
 login_form.j_password = iijmio_user["password"]
 page = agent.submit(login_form, login_form.buttons.first)
 
-page = agent.page.link_with(:href => '/service/setup/hdd/viewdata/').click
+#page = agent.page.link_with(:href => '/service/setup/hdd/viewdata/').click
+page = agent.get("/service/setup/hdd/viewdata/")
 
 page.forms.each do |form|
   hdoCode = form.hdoCode
@@ -42,17 +44,21 @@ page.forms.each do |form|
   end
 
   DailyUsage.transaction do
-    now = Time.now
     hc = Sim.where(hdo_code: hdoCode).first || Sim.new
     hc.hdo_code = hdoCode
-    hc.phone_number = heading_hash["tel"]
+    if heading_hash["tel"] =~ /^([-0-9]+) タイプ(.)\s+\((.*?)\)$/
+      hc.phone_number = $1
+      hc.sim_service = $3
+    else
+      hc.phone_number = heading_hash["tel"]
+    end
     hc.iccid = heading_hash["iccid"]
     hc.sim_type = heading_hash["sim_type"]
     hc.save!
 
     daily_usage_hash.each do |day|
       usage = DailyUsage.where(hdo_code: hc, date: day["date"]).first || DailyUsage.new
-      usage.hdo_code = hc
+      usage.hdo_code = hc.hdo_code
       usage.date = day["date"]
       usage.lte_3g = day["lte_3g"]
       usage.limited_200k = day["limited_200k"]
@@ -61,3 +67,4 @@ page.forms.each do |form|
     end
   end
 end
+

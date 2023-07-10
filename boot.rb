@@ -8,7 +8,7 @@ Bundler.require
 
 ActiveRecord::Base.logger = Logger.new('log/debug.log')
 configuration = YAML::load(IO.read('config/database.yml'))
-ActiveRecord::Base.establish_connection(configuration['development'])
+ActiveRecord::Base.establish_connection(configuration['production'])
 
 class Sim < ActiveRecord::Base
   self.primary_key = :hdo_code

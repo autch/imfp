@@ -3,6 +3,7 @@ class CreateUsage < ActiveRecord::Migration
     create_table :sims, id: false do |t|
       t.string :hdo_code, null: false
       t.string :phone_number, null: false
+      t.string :sim_service, null: false
       t.string :iccid, null: false
       t.string :sim_type, null: false
 
